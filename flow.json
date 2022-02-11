@@ -21,23 +21,10 @@
         "mainnet": "0xf233dcee88fe0abe"
 			}
     },
-    "TeleportCustody": "./contracts/flow/teleport/TeleportCustody.cdc",
     "TeleportCustodyEthereum": {
       "source": "./contracts/flow/teleport/TeleportCustodyEthereum.cdc",
       "aliases": {
-        "mainnet": "0x0ac14a822e54cc4e"
-      }
-    },
-    "TeleportCustodySolana": {
-      "source": "./contracts/flow/teleport/TeleportCustodySolana.cdc",
-      "aliases": {
-        "mainnet": "0x0ac14a822e54cc4e"
-      }
-    },
-    "TeleportCustodyBSC": {
-      "source": "./contracts/flow/teleport/TeleportCustodyBSC.cdc",
-      "aliases": {
-        "mainnet": "0x0ac14a822e54cc4e"
+        "mainnet": "0xaad831d03d67904c"
       }
     }
   },
@@ -71,6 +58,9 @@
     },
     "usdc-user-testnet": {
       "fromFile": "./flow.testnet.json"
+    },
+    "usdc-admin-mainnet": {
+      "fromFile": "./flow.mainnet.json"
     }
   },
   "deployments": {
