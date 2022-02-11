@@ -4,7 +4,7 @@
 https://docs.onflow.org/flow-cli/install
 
 ## Run Scripts/Transactions - Examples
-### Setup Joyride Token Vault
+### Setup USDC Token Vault
 ```
 flow transactions send ./transactions/token/setupFiatTokenVault.cdc \
   --network testnet \
@@ -12,7 +12,7 @@ flow transactions send ./transactions/token/setupFiatTokenVault.cdc \
   --gas-limit 1000
 ```
 
-### Transfer Joyride Token
+### Transfer USDC Token
 ```
 flow transactions send ./transactions/token/transferFiatToken.cdc \
   --network testnet \
@@ -22,7 +22,7 @@ flow transactions send ./transactions/token/transferFiatToken.cdc \
   --gas-limit 1000
 ```
 
-### Get Joyride Token Balance
+### Get USDC Token Balance
 ```
 flow scripts execute ./scripts/token/getFiatTokenBalance.cdc \
   --network testnet \
