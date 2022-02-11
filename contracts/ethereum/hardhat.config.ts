@@ -6,16 +6,13 @@ import "@nomiclabs/hardhat-etherscan";
 const config: HardhatUserConfig = {
   networks: {
     rinkeby: {
-      url: "", // rinkeby url
-      accounts: [/* private key here. 0x... */],
-    },
-    bscTestnet: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      url: "https://rinkeby.infura.io/v3/", // rinkeby url
       accounts: [],
     },
-    bscMainnet: {
-      url: "https://bsc-dataseed1.binance.org",
+    mainnet: {
+      url: "https://mainnet.infura.io/v3/",
       accounts: [],
+      gasPrice: 80000000000
     },
   },
   solidity: {

@@ -1,128 +1,105 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.7;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Token.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./TeleportAdmin.sol";
 
-contract TeleportCustody is Ownable {
-    using SafeMath for uint256;
+/**
+ * @dev Implementation of the TeleportCustody contract.
+ *
+ * There are two priviledged roles for the contract: "owner" and "admin".
+ *
+ * Owner: Has the ultimate control of the contract and the funds stored inside the
+ *        contract. Including:
+ *     1) "freeze" and "unfreeze" the contract: when the TeleportCustody is frozen,
+ *        all deposits and withdrawals with the TeleportCustody is disabled. This 
+ *        should only happen when a major security risk is spotted or if admin access
+ *        is comprimised.
+ *     2) assign "admins": owner has the authority to grant "unlock" permission to
+ *        "admins" and set proper "unlock limit" for each "admin".
+ *
+ * Admin: Has the authority to "unlock" specific amount to tokens to receivers.
+ */
+contract TeleportCustody is TeleportAdmin {
+  // USD Coin
+  ERC20 internal _tokenContract;
+  
+  // Records that an unlock transaction has been executed
+  mapping(bytes32 => bool) internal _unlocked;
+  
+  // Emmitted when user locks token and initiates teleport
+  event Locked(uint256 amount, bytes8 indexed flowAddress, address indexed ethereumAddress);
 
-    mapping(address => uint256) private _allowedAmount;
-    mapping(bytes32 => bool) internal _teleportOutRecord;
+  // Emmitted when teleport completes and token gets unlocked
+  event Unlocked(uint256 amount, address indexed ethereumAddress, bytes32 indexed flowHash);
 
-    bool private _isFrozen;
-    Token private _token;
+  constructor(address tokenAddress) {
+    _tokenContract = ERC20(tokenAddress);
+  }
 
-    event AdminUpdated(address indexed account, uint256 allowedAmount);
-    event TeleportOut(
-        uint256 amount,
-        address indexed ethereumAddress,
-        bytes32 indexed flowHash
-    );
-    event TeleportIn(uint256 amount, bytes8 indexed flowAddress);
+  /**
+    * @dev User locks token and initiates teleport request.
+    */
+  function lock(uint256 amount, bytes8 flowAddress)
+    public
+    notFrozen
+  {
+    address sender = _msgSender();
 
-    constructor(Token token) {
-        _token = token;
-    }
+    bool result = _tokenContract.transferFrom(sender, address(this), amount);
+    require(result, "TeleportCustody: transferFrom returns falsy value");
 
-    /**
-     * @dev Throw if contract is currently frozen.
-     */
-    modifier notFrozen() {
-        require(!_isFrozen, "contract is frozen by owner");
+    emit Locked(amount, flowAddress, sender);
+  }
 
-        _;
-    }
+  // Admin methods
 
-    /**
-     * @dev Returns if the contract is currently frozen.
-     */
-    function isFrozen() public view returns (bool) {
-        return _isFrozen;
-    }
+  /**
+    * @dev TeleportAdmin unlocks token upon receiving teleport request from Flow.
+    */
+  function unlock(uint256 amount, address ethereumAddress, bytes32 flowHash)
+    public
+    notFrozen
+    consumeAuthorization(amount)
+  {
+    _unlock(amount, ethereumAddress, flowHash);
+  }
 
-    /**
-     * @dev Owner freezes the contract.
-     */
-    function freeze() public onlyOwner {
-        _isFrozen = true;
-    }
+  // Owner methods
 
-    /**
-     * @dev Owner unfreezes the contract.
-     */
-    function unfreeze() public onlyOwner {
-        _isFrozen = false;
-    }
+  /**
+    * @dev Owner unlocks token upon receiving teleport request from Flow.
+    * There is no unlock limit for owner.
+    */
+  function unlockByOwner(uint256 amount, address ethereumAddress, bytes32 flowHash)
+    public
+    notFrozen
+    onlyOwner
+  {
+    _unlock(amount, ethereumAddress, flowHash);
+  }
 
-    /**
-     * @dev Returns the teleport token
-     */
-    function getToken() public view returns (Token) {
-        return _token;
-    }
+  // Internal methods
 
-    /**
-     * @dev Updates the admin status of an account.
-     * Can only be called by the current owner.
-     */
-    function depositAllowance(address account, uint256 amount)
-        public
-        onlyOwner
-    {
-        _allowedAmount[account] = _allowedAmount[account].add(amount);
-        emit AdminUpdated(account, amount);
-    }
+  /**
+    * @dev Internal function for processing unlock requests.
+    * 
+    * There is no way TeleportCustody can check the validity of the target address
+    * beforehand so user and admin should always make sure the provided information
+    * is correct.
+    */
+  function _unlock(uint256 amount, address ethereumAddress, bytes32 flowHash)
+    internal
+  {
+    require(ethereumAddress != address(0), "TeleportCustody: ethereumAddress is the zero address");
+    require(!_unlocked[flowHash], "TeleportCustody: same unlock hash has been executed");
 
-    /**
-     * @dev Checks the authorized amount of an admin account.
-     */
-    function allowedAmount(address account) public view returns (uint256) {
-        return _allowedAmount[account];
-    }
+    _unlocked[flowHash] = true;
 
-    /**
-     * @dev Teleport admin will teleport out tokens by the other chain's tx hash
-     */
-    function teleportOut(
-        uint256 amount,
-        address ethereumAddress,
-        bytes32 flowHash
-    ) public notFrozen {
-        // check admin's allowance
-        require(
-            _allowedAmount[msg.sender] >= amount,
-            "caller does not have sufficient allowance"
-        );
-        _allowedAmount[msg.sender] = _allowedAmount[msg.sender].sub(amount);
-        emit AdminUpdated(msg.sender, _allowedAmount[msg.sender]);
+    bool result = _tokenContract.transfer(ethereumAddress, amount);
+    require(result, "TeleportCustody: transfer returns falsy value");
 
-        // checking has tx hash unlocked
-        require(
-            !_teleportOutRecord[flowHash],
-            "the hash has already teleported out"
-        );
-        _teleportOutRecord[flowHash] = true;
-
-        // mint
-        _token.mint(ethereumAddress, amount);
-        emit TeleportOut(amount, ethereumAddress, flowHash);
-    }
-
-    /**
-     * @dev teleport in will burn your token and teleport to other chains
-     */
-    function teleportIn(uint256 amount, bytes8 flowAddress) public notFrozen {
-        _token.burnFrom(msg.sender, amount);
-        emit TeleportIn(amount, flowAddress);
-    }
-
-    /**
-     * @dev Overrides the inherited method from Ownable.
-     * Disable ownership resounce.
-     */
-    function renounceOwnership() public override view onlyOwner {
-        revert("ownership cannot be renounced");
-    }
+    emit Unlocked(amount, ethereumAddress, flowHash);
+  }
 }

@@ -23,7 +23,7 @@ transaction {
         // Create a public capability to the Vault that only exposes
         // the balance field through the Balance interface
         signer.link<&FiatToken.Vault{FungibleToken.Balance}>(
-            FiatToken.TokenPublicBalancePath,
+            FiatToken.VaultBalancePubPath,
             target: FiatToken.VaultStoragePath
         )
     }
