@@ -11,12 +11,12 @@ transaction(allowedAmount: UFix64) {
         teleportAdmin.save(<- teleportAdminResource, to: TeleportCustodyEthereum.TeleportAdminStoragePath)
 
         teleportAdmin.link<&TeleportCustodyEthereum.TeleportAdmin{TeleportCustodyEthereum.TeleportUser}>(
-            TeleportCustodyEthereum.TeleportAdminTeleportUserPath,
+            TeleportCustodyEthereum.TeleportUserPublicPath,
             target: TeleportCustodyEthereum.TeleportAdminStoragePath
         )
 
         teleportAdmin.link<&TeleportCustodyEthereum.TeleportAdmin{TeleportCustodyEthereum.TeleportControl}>(
-            TeleportCustodyEthereum.TeleportAdminTeleportControlPath,
+            TeleportCustodyEthereum.TeleportAdminPrivatePath,
             target: TeleportCustodyEthereum.TeleportAdminStoragePath
         )
     }

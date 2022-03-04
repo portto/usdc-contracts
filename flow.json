@@ -53,13 +53,22 @@
       "keys": "eb4347b08ebd2f74d38bec1026b07430fe04510c95afe8534735677a3410dd87",
       "chain": "flow-emulator"
     },
+    "usdc-minter-testnet": {
+      "fromFile": "./flow.testnet.json"
+    },
     "usdc-admin-testnet": {
+      "fromFile": "./flow.testnet.json"
+    },
+    "usdc-teleport-admin-testnet": {
       "fromFile": "./flow.testnet.json"
     },
     "usdc-user-testnet": {
       "fromFile": "./flow.testnet.json"
     },
     "usdc-admin-mainnet": {
+      "fromFile": "./flow.mainnet.json"
+    },
+    "usdc-teleport-admin-mainnet": {
       "fromFile": "./flow.mainnet.json"
     }
   },

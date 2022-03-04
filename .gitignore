@@ -1,3 +1,6 @@
+# built transactions
+build/
+
 # secrets
 flow.mainnet.json
 flow.testnet.json
